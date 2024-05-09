@@ -1,0 +1,4 @@
+from daq_connectivity.usb import USB_connection
+from daq_connectivity.detect_daq_ethernet import Detect_daq_ethernet
+from daq_connectivity.ethernet import Ethernet_connection
+
