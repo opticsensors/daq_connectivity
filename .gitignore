@@ -17,3 +17,6 @@ plots/
 results/
 0. results/
 data/
+
+# others
+logger/
