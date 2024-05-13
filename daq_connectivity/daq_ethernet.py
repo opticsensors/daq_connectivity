@@ -7,8 +7,7 @@ import sys
 from ping3 import ping
 import datetime
 
-
-class Ethernet_connection:
+class Daq_ethernet:
     # *** UDP Port Number Function *** 
     # 1235 (fixed)         Device's discovery receiving port
     # 1234 (programmable)  PC's default discovery receiving port.
