@@ -23,7 +23,7 @@ class DataQDI4370Ethernet:
         print ("Done binding!")
 
         # socket for receiving
-        self.rec_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.rec_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # indicates IPv4 and User Datagram Protocol (UDP)
         self.rec_sock.bind((IPAddr,1234))  # Have to make sure this port is open --> 'sudo ufw allow 1234/udp'
 
 

@@ -1,16 +1,19 @@
 import socket
 import re
+import logging
 
 class Detect_daq_ethernet:
-    # *** UDP Port Number Function *** 
-    # 1235 (fixed)         Device's discovery receiving port
-    # 1234 (programmable)  PC's default discovery receiving port.
-    # 51235 (fixed)        Device's command receiving port
-    # 1234 (programmable)  PC's default status/data receiving port. Programmable via the PORT command.
+    # Ports Configuration
+    DISCOVERY_RECEIVING_PORT = 1235
+    COMMAND_RECEIVING_PORT = 51235
+    PC_DEFAULT_RECEIVING_PORT = 1234
+    BROADCAST_ADDRESS = '255.255.255.255'
+    BROADCAST_MESSAGE = b'dataq_instruments'
+    SOCKET_BUFFER_SIZE = 2048
 
-    def __init__(self, ):
-        self.socket_buffer_size = 2048
-
+    def __init__(self, ip_address='0.0.0.0'):
+        logging.basicConfig(level=logging.INFO)
+        
         # Open socket for sending broadcast and another to receive our responses
         self.disc_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)  # UDP
         self.disc_sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
@@ -18,59 +21,52 @@ class Detect_daq_ethernet:
         hostname=socket.gethostname()
         IPAddr=socket.gethostbyname(hostname)
         
-        print ("PC's IP is ", IPAddr)
-        self.disc_sock.bind((IPAddr,1235))       # DataQ device's discovery receiving port, from documentation
-        print ("Done binding!")
+        # DataQ device's discovery receiving port, from documentation
+        self.disc_sock.bind((IPAddr,self.DISCOVERY_RECEIVING_PORT))       
+        logging.info(f"Socket bound to {IPAddr}:{self.DISCOVERY_RECEIVING_PORT}")
 
         # socket for receiving
-        self.rec_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.rec_sock.bind((IPAddr,1234))  # Have to make sure this port is open --> 'sudo ufw allow 1234/udp' or Windows key + R and type wf.msc
+        self.rec_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # indicates IPv4 and User Datagram Protocol (UDP)
+        self.rec_sock.bind((IPAddr,self.PC_DEFAULT_RECEIVING_PORT))  # Have to make sure this port is open --> 'sudo ufw allow 1234/udp'
+        logging.info(f"Socket bound to {IPAddr}:{self.PC_DEFAULT_RECEIVING_PORT}")
 
-
-    # Do a UDP broadcast to our local network to see what networked DataQ devices we have
     def do_udp_discovery(self):
-        msg = b'dataq_instruments'
-        print("Sending UDP Broadcast '%s' " % (msg.decode()))
-        self.disc_sock.sendto(msg, ("255.255.255.255", 1235))     # Device's discovery receiving port
+        logging.info(f"Sending UDP Broadcast '{self.BROADCAST_MESSAGE.decode()}'")
+        self.disc_sock.sendto(self.BROADCAST_MESSAGE, (self.BROADCAST_ADDRESS, self.DISCOVERY_RECEIVING_PORT))
+        
+        messages = self.receive_messages(self.rec_sock)
 
-        # This may be a good candidate for python multiprocessing for receiving UDP on a socket in the future
+        # Process received messages
+        decoded_messages = [self.parse_message(data) for addr, data in messages if data]
+        for message in decoded_messages:
+            logging.info(f"Found DataQ device {message['DeviceModel']} on IP {message['IP']}")
+            for key, value in message.items():
+                logging.info(f"   {key}: {value}")
+
+    def receive_messages(self, socket):
         messages = []
+        socket.settimeout(3)  # Set timeout to 3 seconds
         while True:
-            self.rec_sock.settimeout(3)          # Set timeout to 0.5 second, will break out of our try below
             try:
-                data, addr = self.rec_sock.recvfrom(self.socket_buffer_size)
-                messages.append([addr,data])
-            except:
+                data, addr = socket.recvfrom(self.SOCKET_BUFFER_SIZE)
+                messages.append((addr, data))
+            except socket.timeout:
                 break
+        return messages
 
-        # Go through the responses we received in response to our broadcast and parse
-        decoded_messages = []
-        self.connected_count = 0
+    def parse_message(self, data):
+        data = data.decode()
+        pattern = re.compile(
+            r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}) "
+            r"([\w:]{17}) "
+            r"(\w*) (\w*) (\w*) (\w*) (\w*) (\w*) (\w*) (\w*) (\w*) (\w*)"
+        )
+        result = pattern.search(data)
+        keys = ['IP', 'MAC', 'SoftwareRev', 'DeviceModel', 'ADCRunning', 'Reserved', 
+                'LengthOfDescription', 'Description', 'SerialNumber', 'GroupID', 'OrderInGroup', 'Master/Slave']
+        return {key: result.group(i+1) for i, key in enumerate(keys) if result}
 
-        print (messages)
-
-        for message in messages:
-            data = message[1].decode()
-
-            # https://www.dataq.com/resources/pdfs/misc/Dataq-Instruments-Protocol.pdf, page 12
-            re_string = "(\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}) " + \
-                        "(\w{2}:\w{2}:\w{2}:\w{2}:\w{2}:\w{2}) " + \
-                        "(\w*) (\w*) (\w*) (\w*) (\w*) (\w*) (\w*) (\w*) (\w*) (\w*)"
-            result = re.search(re_string, data)
-            message_contents = ['IP', 'MAC', 'SoftwareRev', 'DeviceModel', 'ADCRunning', 'Reserved', 
-                                'LengthOfDescription', 'Description', 'SerialNumber', 'GroupID', 'OrderInGroup', 'Master/Slave']
-
-            decoded_message = {}
-            i = 0
-            for content in message_contents:
-                i = i + 1
-                decoded_message[content] = result.group(i)
-
-            decoded_messages.append(decoded_message)
-
-            self.connected_count = self.connected_count + 1
-
-            print("Found DataQ device %s on IP %s" % (decoded_message['DeviceModel'], decoded_message['IP']))
-            for message in decoded_message:
-                print("   " + message + ": " + decoded_message[message])
+    def close_sockets(self):
+        self.disc_sock.close()
+        self.rec_sock.close()
 

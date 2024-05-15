@@ -2,15 +2,18 @@ import serial
 import serial.tools.list_ports
 import time
 import struct
-import keyboard
+import logging
 
 class Daq_serial:
-    def __init__(self, dec, deca, srate, output_mode):
+    def __init__(self, dec, deca, srate, output_mode, numofchannel=4):
+        logging.basicConfig(level=logging.INFO)
         self.dec = dec 
         self.deca = deca 
         self.srate = srate
         self.ser = serial.Serial()
         self.output_mode = output_mode
+        self.numofchannel = numofchannel #if you modify the slist, you need modify this accordingly
+        self.numofbyteperscan = 2*numofchannel
 
     def discovery(self, ):
         """ 
@@ -29,7 +32,7 @@ class Daq_serial:
                 break
 
         if hooked_port:
-            print("Found a DATAQ Instruments device on", hooked_port)
+            logging.info(f"Found a DATAQ Instruments device on {hooked_port}")
             if self.output_mode == 'ascii':
                 self.ser.timeout = 0
             elif self.output_mode == 'binary':
@@ -40,8 +43,7 @@ class Daq_serial:
             return (True)
         else:
             # Get here if no DATAQ Instruments devices are detected
-            print("Please connect a DATAQ Instruments device")
-            input("Press ENTER to try again...")
+            logging.info("Please connect a DATAQ Instruments device")
             return (False)
     
     def config_daq(self, ):
@@ -57,7 +59,7 @@ class Daq_serial:
 
         elif self.output_mode == 'binary':
             self.ser.write(b"encode 0\r")
-
+        
         self.ser.write(b"slist 0 0\r")       #scan list position 0 channel 0 thru channel 7
         self.ser.write(b"slist 1 1\r")
         self.ser.write(b"slist 2 2\r")
@@ -88,95 +90,61 @@ class Daq_serial:
             self.ser.reset_input_buffer()
             self.ser.write(b"start\r")       #start scanning
 
-    def collect_data_ascii(self, file_path):
-        with open(file_path, 'a') as file:  # Opens the file in append mode
-            while True:
-                if keyboard.is_pressed('x'):
-                    self.ser.write(b"stop\r")
-                    time.sleep(1)           
-                    self.ser.close()
-                    break
-                try:
-                    i= self.ser.inWaiting()
-                    if i>0:
-                        line = self.ser.readline().decode("utf-8")
-                        print(line, end="\r")
-                        file.write(line.rstrip("\r\n") + "\n")  
-                except:
-                    pass
+    def collect_data_ascii(self, ):
+        i= self.ser.inWaiting()
+        if i>0:
+            values = self.ser.readline().decode("utf-8")
+            values = [float(num.strip()) for num in values.split(',')]
+            return values
 
-    def collect_data_binary1(self, file_path):
+
+    def collect_data_binary1(self, ):
         
-        numofchannel=4 #if you modify the slist, you need modify this accordingly
-        numofbyteperscan=2*numofchannel
+        i= self.ser.in_waiting
+        if (i//self.numofbyteperscan)>0:
+            #we always read in scans
+            response = self.ser.read(i - i%self.numofbyteperscan)
+
+            Channel = []
+
+            for x in range (0, self.numofchannel):
+                adc=response[x*2]+response[x*2+1]*256
+                if adc>32767:
+                    adc=adc-65536
+                Channel.append(adc)
         
-        with open(file_path, 'a') as file:  # Opens the file in append mode
-            while True:
-                try:
-                    if keyboard.is_pressed('x'):    #if key 'x' is pressed, stop the scanning and terminate the program
-                        self.ser.write(b"stop\r")
-                        time.sleep(1)           
-                        self.ser.close()
-                        print("Good-Bye")
-                        break
-                    else:
-                        i= self.ser.in_waiting
-                        if (i//numofbyteperscan)>0:
-                            #we always read in scans
-                            response = self.ser.read(i - i%numofbyteperscan)
+            return Channel
 
-                            Channel =[]
+    def collect_data_binary2(self, ):
+    
+        i= self.ser.in_waiting
+        if (i//self.numofbyteperscan)>0:
+            #we always read in scans
+            response = self.ser.read(i - i%self.numofbyteperscan)
 
-                            for x in range (0, numofchannel):
-                                adc=response[x*2]+response[x*2+1]*256
-                                if adc>32767:
-                                    adc=adc-65536
-                                Channel.append (adc)
-                
-                            #Print only the first scan for demo purpose
-                            print (Channel)
-                        pass
-                except:
-                    pass
-
-    def collect_data_binary2(self, file_path):
+            count=(i - i%self.numofbyteperscan)//2
         
-        numofchannel=4 #if you modify the slist, you need modify this accordingly
-        numofbyteperscan=2*numofchannel
+            response2=bytearray(response)
+            
+            Channel=struct.unpack("<"+"h"*count, response2)
 
-        with open(file_path, 'a') as file:  # Opens the file in append mode
-            while True:
-                if keyboard.is_pressed('x'):
-                    self.ser.write(b"stop\r")
-                    time.sleep(1)           
-                    self.ser.close()
-                    break
-                try:
-                    i= self.ser.in_waiting
-                    if (i//numofbyteperscan)>0:
-                        #we always read in scans
-                        response = self.ser.read(i - i%numofbyteperscan)
+            return Channel
 
-                        count=(i - i%numofbyteperscan)//2
-                    
-                        response2=bytearray(response)
-                        
-                        Channel=struct.unpack("<"+"h"*count, response2)
 
-                        #print all
-                        print (Channel)
-                        file.write(Channel.rstrip("\r\n") + "\n")  
-                except:
-                    pass
-
-    def collect_data(self, file_path, binary_method = 1):
+    def collect_data(self, binary_method = 1):
         
-        self.config_daq()
         if self.output_mode == 'ascii':
-            self.collect_data_ascii(file_path)
+            line = self.collect_data_ascii()
 
         elif self.output_mode == 'binary':
             if binary_method == 1:
-                self.collect_data_binary1(file_path)
+                line = self.collect_data_binary1()
             elif binary_method == 2:
-                self.collect_data_binary2(file_path)
+                line = self.collect_data_binary2()
+        return line
+
+    def close_serial(self):
+        self.ser.write(b"stop\r")
+        time.sleep(1)           
+        self.ser.close()
+    
