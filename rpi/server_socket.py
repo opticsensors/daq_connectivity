@@ -2,9 +2,9 @@
 import socket
 
 soc = socket.socket()
-soc.bind(('',8080))
+soc.bind(('192.168.1.43',8080))
 soc.listen(1)
-filename = 'a.txt'
+filename = './results/2024-05-16_11.12.06.035455.txt'
 
 print('waiting for connection...')
 with soc:
