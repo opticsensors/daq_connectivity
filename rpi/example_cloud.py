@@ -4,7 +4,7 @@ remote_name = 'first_remote'
 remote_type = 'drive'
 in_path = 'results'
 out_path = f'{remote_name}:Eurecat'
-list_of_remotes = list_remotes()
+list_of_remotes = daq.list_remotes()
 
 if list_of_remotes:
     for e in list_of_remotes:

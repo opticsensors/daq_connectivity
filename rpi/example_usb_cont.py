@@ -1,4 +1,3 @@
-import time
 import os
 import datetime
 import pandas as pd
@@ -12,12 +11,12 @@ remote_name = 'test1'
 remote_type = 'drive'
 in_path = 'results'
 out_path = f'{remote_name}:Eurecat'
-list_of_remotes = list_remotes()
+list_of_remotes = daq.list_remotes()
 
 date_name = str(datetime.datetime.now().date()) + '_' + str(datetime.datetime.now().time()).replace(':', '.')
 file_path = os.path.join(path_to_save, f'{date_name}.csv')
 
-usb = daq.Daq_serial(dec=800, deca=3, srate=6000, output_mode=output_mode)
+usb = daq.Daq_serial(dec=1, deca=50, srate=6000, output_mode=output_mode)
 usb.config_daq()
 
 daq.create_remote(remote_name, remote_type)
@@ -50,7 +49,7 @@ while True:
             'Val4': values[3]
         }
         list_of_dict.append(dict_param)
-        # print(f'Frame: {i}, Time: {date}, Val 1: {values[0]}, Val 2: {values[1]}, Val 3: {values[2]}, Val 4: {values[3]}')
+        print(f'Frame: {i}, Time: {date}, Val 1: {values[0]}, Val 2: {values[1]}, Val 3: {values[2]}, Val 4: {values[3]}')
         i += 1
 
     if not M and prev_M:

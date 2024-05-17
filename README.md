@@ -18,11 +18,21 @@ In order to push and pull from one of my repos via ssh in my rpi I had to create
 
 ```
 git clone https://opticsensors:<MYTOKEN>@github.com/opticsensors/daq_connectivity.git 
-git remote set-url origin https://scuzzlebuzzle:<MYTOKEN>@github.com/opticsensors/daq_connectivity.git
+git remote set-url origin https://opticsensors:<MYTOKEN>@github.com/opticsensors/daq_connectivity.git
 ```
 
 To copy files to cloud (tried only with google drive) we have to install first:
 
 ```
 sudo apt install rclone
+```
+
+To launch a python script on startup for raspberrypi we have to do:
+```
+sudo contrab -e
+```
+
+We edit the file to add the following line:
+```
+reboot python3 /home/pi/Desktop/.../file.py
 ```
