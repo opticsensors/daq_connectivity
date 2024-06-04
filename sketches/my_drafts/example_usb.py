@@ -6,15 +6,15 @@ import time
 import pandas as pd
 import daq_connectivity as daq 
 
-output_mode = 'ascii'
-binary_method = 1
+output_mode = 'binary'
+binary_method = 2
 i=0
 
 path_to_save = "C:\\Users\\eduard.almar\\OneDrive - EURECAT\\Escritorio\\proyectos\\7. Suricata\\repo\\daq_connectivity\\logger"
 date_name = str(datetime.datetime.now().date()) + '_' + str(datetime.datetime.now().time()).replace(':', '.')
 file_path = os.path.join(path_to_save, f'{date_name}.csv')
 
-usb = daq.Daq_serial(dec=800,deca=3, srate=6000, output_mode=output_mode)
+usb = daq.Daq_serial(channels=[0,1], configs=[1280,1], dec=1,deca=1800, srate=6000, output_mode=output_mode)
 usb.config_daq()
 
 list_of_dict = []
@@ -32,10 +32,8 @@ while True:
             dict_param['Time']=time_measurement
             dict_param['Val1']=values[0]
             dict_param['Val2']=values[1]
-            dict_param['Val3']=values[2]
-            dict_param['Val4']=values[3]
             list_of_dict.append(dict_param.copy())
-            print(f'Frame: {i}, Time: {time_measurement}, Val 1: {values[0]}, Val 2: {values[1]}, Val 3: {values[2]}, Val 4: {values[3]}')
+            print(f'Frame: {i}, Time: {time_measurement}, Val 1: {values[0]}, Val 2: {values[1]}')
             i+=1
 
     except:

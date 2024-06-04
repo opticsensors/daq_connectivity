@@ -5,15 +5,17 @@ import struct
 import logging
 
 class Daq_serial:
-    def __init__(self, dec, deca, srate, output_mode, numofchannel=4):
+    def __init__(self, channels, configs, dec, deca, srate, output_mode, ):
         logging.basicConfig(level=logging.INFO)
         self.dec = dec 
         self.deca = deca 
         self.srate = srate
         self.ser = serial.Serial()
         self.output_mode = output_mode
-        self.numofchannel = numofchannel #if you modify the slist, you need modify this accordingly
-        self.numofbyteperscan = 2*numofchannel
+        self.channels = channels
+        self.configs = configs # value from Analog Measurement Range Table of protocol manual (if same number as channel, max voltage range is applied)
+        self.numofchannel = len(channels) # if you modify the slist, you need modify this accordingly
+        self.numofbyteperscan = 2*self.numofchannel
 
     def discovery(self, ):
         """ 
@@ -60,10 +62,8 @@ class Daq_serial:
         elif self.output_mode == 'binary':
             self.ser.write(b"encode 0\r")
         
-        self.ser.write(b"slist 0 0\r")       #scan list position 0 channel 0 thru channel 7
-        self.ser.write(b"slist 1 1\r")
-        self.ser.write(b"slist 2 2\r")
-        self.ser.write(b"slist 3 3\r")
+        for ch,config in zip(self.channels, self.configs):
+            self.ser.write(f"slist {ch} {config}\r".encode('UTF-8'))
 
         self.ser.write(f"srate {self.srate}\r".encode('UTF-8')) 
         self.ser.write(f"dec {self.dec}\r".encode('UTF-8')) 
