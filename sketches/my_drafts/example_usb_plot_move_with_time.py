@@ -6,15 +6,15 @@ import datetime
 import time
 import daq_connectivity as daq 
 
-output_mode = 'ascii'
-binary_method = 1
+output_mode = 'binary'
+binary_method = 2
 repeat_length = 5
 
 path_to_save = "C:\\Users\\eduard.almar\\OneDrive - EURECAT\\Escritorio\\proyectos\\7. Suricata\\repo\\daq_connectivity\\logger"
 date_name = str(datetime.datetime.now().date()) + '_' + str(datetime.datetime.now().time()).replace(':', '.')
 file_path = os.path.join(path_to_save, f'{date_name}.csv')
 
-usb = daq.Daq_serial(dec=800,deca=3, srate=6000, output_mode=output_mode)
+usb = daq.Daq_serial(channels=[0,], voltage_ranges=[0.2,], dec=80, deca=3, srate=6000, output_mode=output_mode)
 usb.config_daq()
 
 # Initialize empty lists to store data
@@ -36,10 +36,9 @@ def process_data():
             first = False 
         x_vals.append(float(now-later))
         ch1_data.append(values[0])
-        ch2_data.append(values[1])
-        ch3_data.append(values[2])
-        ch4_data.append(values[3])
-        print(f'Time: {values[0]}, Val 1: {values[1]}, Val 2: {values[2]}, Val 3: {values[3]}')
+        #ch2_data.append(values[1])
+
+        print(f'Time: {now}, Val 1: {values[0]}')
 
 
 # Create a function to update the plot
@@ -47,9 +46,7 @@ def update_plot(frame):
     process_data()
     plt.cla()
     plt.plot(x_vals, ch1_data, label='Val 1')
-    plt.plot(x_vals, ch2_data, label='Val 2')
-    plt.plot(x_vals, ch3_data, label='Val 3')
-    plt.plot(x_vals, ch4_data, label='Val 4')
+    #plt.plot(x_vals, ch2_data, label='Val 2')
     plt.xlabel('Time')
     plt.ylabel('Sensor Values')
     plt.legend()

@@ -13,7 +13,7 @@ path_to_save = "C:\\Users\\eduard.almar\\OneDrive - EURECAT\\Escritorio\\proyect
 date_name = str(datetime.datetime.now().date()) + '_' + str(datetime.datetime.now().time()).replace(':', '.')
 file_path = os.path.join(path_to_save, f'{date_name}.csv')
 
-usb = daq.Daq_serial(dec=800,deca=3, srate=6000, output_mode=output_mode)
+usb = daq.Daq_serial(channels=[0,], voltage_ranges=[0.2,], dec=800,deca=3, srate=6000, output_mode=output_mode)
 usb.config_daq()
 
 # Initialize empty lists to store data

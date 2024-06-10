@@ -5,7 +5,7 @@ import struct
 import logging
 
 class Daq_serial:
-    def __init__(self, channels, configs, dec, deca, srate, output_mode, ):
+    def __init__(self, channels, voltage_ranges, dec, deca, srate, output_mode, ):
         logging.basicConfig(level=logging.INFO)
         self.dec = dec 
         self.deca = deca 
@@ -13,9 +13,30 @@ class Daq_serial:
         self.ser = serial.Serial()
         self.output_mode = output_mode
         self.channels = channels
-        self.configs = configs # value from Analog Measurement Range Table of protocol manual (if same number as channel, max voltage range is applied)
+        self.configs = self.voltage_range_to_config(voltage_ranges) 
         self.numofchannel = len(channels) # if you modify the slist, you need modify this accordingly
         self.numofbyteperscan = 2*self.numofchannel
+
+    def voltage_range_to_config(self, voltage_ranges):
+        """
+        The conversion is done using the value from Analog Measurement Range Table of protocol manual 
+        (if same number as channel, max voltage range is applied)
+        """
+        configs = []
+        convesrion_dict = {0.2: '00000101',
+                           0.5: '00000100',
+                           1:   '00000011',
+                           2:   '00000010',
+                           5:   '00000001',
+                           10:  '00000000',}
+        
+        for ch, voltage_range in zip(self.channels, voltage_ranges):
+            ch_bin = f'{ch:08b}'
+            voltage_range_bin = convesrion_dict[voltage_range]
+            config = "".join([voltage_range_bin, ch_bin])
+            config = int(config, 2)
+            configs.append(config)
+        return configs
 
     def discovery(self, ):
         """ 
