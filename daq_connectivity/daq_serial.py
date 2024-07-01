@@ -78,10 +78,10 @@ class Daq_serial:
 
         if self.output_mode == 'ascii':
             self.ser.write(b"eol 1\r")     
-            self.ser.write(b"encode 1\r")        #set up the device for ascii mode
+            self.ser.write(b"encode 1\r")        # set up the device for ascii mode
 
         elif self.output_mode == 'binary':
-            self.ser.write(b"encode 0\r")
+            self.ser.write(b"encode 0\r")        # set up the device for binary mode
         
         for ch,config in zip(self.channels, self.configs):
             self.ser.write(f"slist {ch} {config}\r".encode('UTF-8'))
