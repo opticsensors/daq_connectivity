@@ -15,8 +15,4 @@ __pycache__/
 # folders that contain images
 plots/
 results/
-0. results/
 data/
-
-# others
-logger/

@@ -24,6 +24,8 @@ dependencies = [
     "numpy",
     "pandas",
     "pyserial",
+    "keyboard",
+
 ]
 
 [project.urls]
