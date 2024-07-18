@@ -71,15 +71,11 @@ def update_plot(frame):
 
 # Create a function to save data to a CSV file when the plot window is closed
 def on_close(event):
-    cols = ['Time']
+    df = pd.DataFrame()
+    df['Time'] = x_vals
     for ch in channels:
         name = f'Val{ch}'
-        cols.append(name)
-    
-    ch_data.insert(0, x_vals)
-    data = np.array(ch_data).T
-    df = pd.DataFrame(data, columns=cols)
-    print(df)
+        df[name] = ch_data[ch]
     df.to_csv(file_path, index=False)
 
 
