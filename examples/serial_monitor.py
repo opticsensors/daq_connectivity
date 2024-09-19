@@ -13,7 +13,7 @@ path_to_save = "./results"
 date_name = str(datetime.datetime.now().date()) + '_' + str(datetime.datetime.now().time()).replace(':', '.')
 file_path = os.path.join(path_to_save, f'{date_name}.csv')
 
-usb = daq.Daq_serial(channels=[0,], voltage_ranges=[5, ], dec=100,deca=1, srate=6000, output_mode=output_mode)
+usb = daq.Daq_serial(channels=[0,], voltage_ranges=[10, ], dec=800,deca=1, srate=6000, output_mode=output_mode)
 usb.config_daq()
 
 list_of_dict = []

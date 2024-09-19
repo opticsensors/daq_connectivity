@@ -10,11 +10,11 @@ import daq_connectivity as daq
 output_mode = 'binary'
 binary_method = 1
 repeat_length = 30
-refresh_yaxis_length = 100
+refresh_yaxis_length = 40
 yaxis_margin = 1.2
 inter=80 # plot refresh freq
-channels= [0,1,]
-voltage_ranges = [10,10]
+channels= [0,]
+voltage_ranges = [10,]
 
 path_to_save = "./results"
 date_name = str(datetime.datetime.now().date()) + '_' + str(datetime.datetime.now().time()).replace(':', '.')

@@ -42,18 +42,22 @@ def process_data():
 
 # Create a function to update the plot
 def update_plot(frame):
-    process_data()
-    plt.cla()
-    plt.plot(x_vals, ch1_data, label='Val 1')
-    #plt.plot(x_vals, ch2_data, label='Val 2')
-    plt.xlabel('Time')
-    plt.ylabel('Sensor Values')
-    plt.legend()
+       process_data()
+       plt.cla()
+       if x_vals:  # Check if x_vals is not empty
+           plt.plot(x_vals, ch1_data, label='Val 1')
+           plt.xlabel('Time')
+           plt.ylabel('Sensor Values')
+           plt.legend()
 
-    if x_vals[-1]>repeat_length:
-        lim = plt.xlim(x_vals[-1]-repeat_length, x_vals[-1])
-    else:
-        lim = plt.xlim(0,repeat_length)
+           if x_vals[-1] > repeat_length:
+               plt.xlim(x_vals[-1] - repeat_length, x_vals[-1])
+           else:
+               plt.xlim(0, repeat_length)
+       else:
+           plt.text(0.5, 0.5, 'Waiting for data...', ha='center', va='center')
+           plt.xlim(0, repeat_length)
+           plt.ylim(0, 1)
 
 # Create a function to save data to a CSV file when the plot window is closed
 def on_close(event):
