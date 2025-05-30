@@ -73,6 +73,7 @@ class Daq_serial:
 
         while self.discovery() == False:
             self.discovery()
+            time.sleep(2)
 
         self.ser.write(b"stop\r")            #stop in case device was left scanning
 
