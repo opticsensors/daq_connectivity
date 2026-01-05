@@ -84,8 +84,10 @@ class Daq_serial:
         elif self.output_mode == 'binary':
             self.ser.write(b"encode 0\r")        # set up the device for binary mode
         
-        for ch,config in zip(self.channels, self.configs):
-            self.ser.write(f"slist {ch} {config}\r".encode('UTF-8'))
+        # FIX: Use sequential index for slist position, not channel number
+        # The physical channel is already encoded in the config value
+        for idx, config in enumerate(self.configs):
+            self.ser.write(f"slist {idx} {config}\r".encode('UTF-8'))
 
         self.ser.write(f"srate {self.srate}\r".encode('UTF-8')) 
         self.ser.write(f"dec {self.dec}\r".encode('UTF-8')) 
@@ -169,4 +171,3 @@ class Daq_serial:
         self.ser.write(b"stop\r")
         time.sleep(1)           
         self.ser.close()
-    
